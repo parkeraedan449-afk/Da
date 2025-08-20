@@ -167,11 +167,11 @@ local function onCharacterAdded(character)
 
         local state = humanoid:GetState()
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
-        local isMoving = humanoid.MoveDirection.Magnitude > 0.9
+        local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
         if isJumping and isMoving then
             if humanoid.WalkSpeed ~= currentSpeed then
-                humanoid.WalkSpeed = currentSpeed
+                humanoid.WalkSpeed = currentSpeed +1
             end
         else
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
