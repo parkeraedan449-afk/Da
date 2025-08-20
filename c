@@ -38,7 +38,7 @@ titleLabel.Name = "TitleLabel"
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "Speed Glitch"
+titleLabel.Text = "Speed Glitch By Haz3rk"
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 18
 titleLabel.Parent = mainFrame
@@ -135,7 +135,7 @@ UserInputService.InputChanged:Connect(function(input)
         
         sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
         
-        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * percentage
+        currentSpeed = MIN_SPEED + (MAX_SPEED - (MIN_SPEED / 5)) * percentage
         speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
     end
 end)
