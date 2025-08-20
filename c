@@ -171,7 +171,7 @@ local function onCharacterAdded(character)
 
         if isJumping and isMoving then
             if humanoid.WalkSpeed ~= currentSpeed then
-                humanoid.WalkSpeed = currentSpeed +5000
+                humanoid.WalkSpeed = currentSpeed * 5000
             end
         else
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
