@@ -13,7 +13,7 @@ local player = game.Players.LocalPlayer
 -- Configuration
 local DEFAULT_WALKSPEED = 16 -- Default Roblox walkspeed
 local MIN_SPEED = DEFAULT_WALKSPEED
-local MAX_SPEED = 200 -- Maximum speed for the glitch
+local MAX_SPEED = 10000 -- Maximum speed for the glitch
 local currentSpeed = MIN_SPEED
 
 -- Create GUI
