@@ -158,32 +158,4 @@ local function onCharacterAdded(character)
     humanoid.WalkSpeed = DEFAULT_WALKSPEED
 
     runServiceConnection = RunService.RenderStepped:Connect(function()
-        if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
-
-        if not isGlitchEnabled then
-            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
-                humanoid.WalkSpeed = DEFAULT_WALKSPEED
-            end
-            return
-        end
-
-        local state = humanoid:GetState()
-        local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
-        local isMoving = humanoid.MoveDirection.Magnitude > 0.1
-
-        if isJumping and isMoving then
-            -- Use HumanoidRootPart.Velocity for physics-based speed control
-            if hrp then
-                hrp.Velocity = humanoid.MoveDirection.Unit * currentSpeed * 50
-            end
-        end
-    end)
-end
-
--- Connect to future character spawns
-player.CharacterAdded:Connect(onCharacterAdded)
-
--- Handle character if it already exists when the script runs
-if player.Character then
-    onCharacterAdded(player.Character)
-end
+        if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return en
