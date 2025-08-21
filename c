@@ -170,10 +170,8 @@ local function onCharacterAdded(character)
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
-        -- If the player is jumping, we don't mess with the WalkSpeed
-        if isJumping then
-            humanoid.WalkSpeed = DEFAULT_WALKSPEED
-        elseif isMoving then
+        -- Adjust speed even if jumping or in freefall
+        if isMoving then
             humanoid.WalkSpeed = currentSpeed
         else
             humanoid.WalkSpeed = DEFAULT_WALKSPEED
