@@ -19,7 +19,7 @@ local currentSpeed = MIN_SPEED
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SpeedGlitchGUI"
-screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Parent = player:WaitForChild("PlayerGui") -- Make sure it's under PlayerGui
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
@@ -178,4 +178,13 @@ local function onCharacterAdded(character)
                 hrp.Velocity = Vector3.new(humanoid.MoveDirection.X * currentSpeed, currentVelocity.Y, humanoid.MoveDirection.Z * currentSpeed)
             end
         end
-    end
+    end)
+end
+
+-- Connect to future character spawns
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- Handle character if it already exists when the script runs
+if player.Character then
+    onCharacterAdded(player.Character)
+end
