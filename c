@@ -135,7 +135,7 @@ UserInputService.InputChanged:Connect(function(input)
         
         sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
         
-        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 2)
+        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 4)
         speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
     end
 end)
@@ -154,27 +154,29 @@ local function onCharacterAdded(character)
 
     -- Set WalkSpeed to default when the script starts or character respawns
     humanoid.WalkSpeed = DEFAULT_WALKSPEED
-    humanoid.JumpPower = 50  -- Set default JumpPower if needed
 
-    runServiceConnection = RunService.Heartbeat:Connect(function()
+    runServiceConnection = RunService.RenderStepped:Connect(function()
         if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
 
-        -- When Speed Glitch is enabled
         if not isGlitchEnabled then
-            humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
+                humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            end
             return
         end
 
-        -- Get the state of the character and move direction
         local state = humanoid:GetState()
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
-        -- Adjust speed even if jumping or in freefall
-        if isMoving then
-            humanoid.WalkSpeed = currentSpeed
+        if isJumping and isMoving then
+            if humanoid.WalkSpeed ~= currentSpeed then
+                humanoid.WalkSpeed = currentSpeed
+            end
         else
-            humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
+                humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            end
         end
     end)
 end
