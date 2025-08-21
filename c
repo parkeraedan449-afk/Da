@@ -173,7 +173,7 @@ local function onCharacterAdded(character)
             -- Directly control velocity for faster speed change
             local hrp = character:FindFirstChild("HumanoidRootPart")
             if hrp then
-                hrp.Velocity = humanoid.MoveDirection.Unit * currentSpeed * 50
+                hrp.Velocity = humanoid.MoveDirection.Unit * currentSpeed * 5
             end
         else
             humanoid.WalkSpeed = DEFAULT_WALKSPEED
