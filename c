@@ -136,7 +136,7 @@ UserInputService.InputChanged:Connect(function(input)
         sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
         
         -- Faster acceleration feel: square the percentage for a quicker increase in speed
-        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 5)
+        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 2)
         speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
     end
 end)
@@ -146,6 +146,7 @@ local runServiceConnection = nil
 
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
+    local hrp = character:WaitForChild("HumanoidRootPart")
 
     -- Disconnect previous connection to prevent memory leaks
     if runServiceConnection then
@@ -171,12 +172,14 @@ local function onCharacterAdded(character)
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
         if isJumping and isMoving then
-            if humanoid.WalkSpeed ~= currentSpeed then
-                humanoid.WalkSpeed = currentSpeed * 5000
+            -- Use HumanoidRootPart.Velocity for physics-based speed control
+            if hrp then
+                hrp.Velocity = humanoid.MoveDirection.Unit * currentSpeed * 50
             end
         else
-            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
-                humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            -- Reset velocity to 0 if not jumping or moving
+            if hrp then
+                hrp.Velocity = Vector3.new(0, hrp.Velocity.Y, 0)
             end
         end
     end)
