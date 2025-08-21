@@ -154,6 +154,7 @@ local function onCharacterAdded(character)
 
     -- Set WalkSpeed to default when the script starts or character respawns
     humanoid.WalkSpeed = DEFAULT_WALKSPEED
+    humanoid.JumpPower = 50  -- Set default JumpPower if needed
 
     runServiceConnection = RunService.Heartbeat:Connect(function()
         if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
@@ -169,12 +170,11 @@ local function onCharacterAdded(character)
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
-        if isJumping and isMoving then
-            -- Directly control velocity for faster speed change
-            local hrp = character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                hrp.Velocity = humanoid.MoveDirection.Unit * currentSpeed
-            end
+        if isJumping then
+            -- Allow the jump to be controlled by Roblox physics
+            humanoid.WalkSpeed = currentSpeed
+        elseif isMoving then
+            humanoid.WalkSpeed = currentSpeed
         else
             humanoid.WalkSpeed = DEFAULT_WALKSPEED
         end
