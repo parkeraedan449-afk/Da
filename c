@@ -136,7 +136,7 @@ UserInputService.InputChanged:Connect(function(input)
         sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
         
         -- Faster acceleration feel: square the percentage for a quicker increase in speed
-        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 2)
+        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 5)
         speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
     end
 end)
