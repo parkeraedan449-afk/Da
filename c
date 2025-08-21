@@ -176,11 +176,6 @@ local function onCharacterAdded(character)
             if hrp then
                 hrp.Velocity = humanoid.MoveDirection.Unit * currentSpeed * 50
             end
-        else
-            -- Reset velocity to 0 if not jumping or moving
-            if hrp then
-                hrp.Velocity = Vector3.new(0, hrp.Velocity.Y, 0)
-            end
         end
     end)
 end
