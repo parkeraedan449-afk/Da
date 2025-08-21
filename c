@@ -159,20 +159,20 @@ local function onCharacterAdded(character)
     runServiceConnection = RunService.Heartbeat:Connect(function()
         if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
 
+        -- When Speed Glitch is enabled
         if not isGlitchEnabled then
-            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
-                humanoid.WalkSpeed = DEFAULT_WALKSPEED
-            end
+            humanoid.WalkSpeed = DEFAULT_WALKSPEED
             return
         end
 
+        -- Get the state of the character and move direction
         local state = humanoid:GetState()
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
+        -- If the player is jumping, we don't mess with the WalkSpeed
         if isJumping then
-            -- Allow the jump to be controlled by Roblox physics
-            humanoid.WalkSpeed = currentSpeed
+            humanoid.WalkSpeed = DEFAULT_WALKSPEED
         elseif isMoving then
             humanoid.WalkSpeed = currentSpeed
         else
