@@ -19,7 +19,7 @@ local currentSpeed = MIN_SPEED
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SpeedGlitchGUI"
-screenGui.Parent = player:WaitForChild("PlayerGui") -- Make sure it's under PlayerGui
+screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
@@ -135,7 +135,6 @@ UserInputService.InputChanged:Connect(function(input)
         
         sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
         
-        -- Faster acceleration feel: square the percentage for a quicker increase in speed
         currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 2)
         speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
     end
@@ -146,7 +145,6 @@ local runServiceConnection = nil
 
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
-    local hrp = character:WaitForChild("HumanoidRootPart")
 
     -- Disconnect previous connection to prevent memory leaks
     if runServiceConnection then
@@ -157,7 +155,7 @@ local function onCharacterAdded(character)
     -- Set WalkSpeed to default when the script starts or character respawns
     humanoid.WalkSpeed = DEFAULT_WALKSPEED
 
-    runServiceConnection = RunService.RenderStepped:Connect(function()
+    runServiceConnection = RunService.Heartbeat:Connect(function()
         if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
 
         if not isGlitchEnabled then
@@ -172,11 +170,13 @@ local function onCharacterAdded(character)
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
         if isJumping and isMoving then
-            -- Apply velocity to HumanoidRootPart but keep the Y-axis velocity (jump height)
+            -- Directly control velocity for faster speed change
+            local hrp = character:FindFirstChild("HumanoidRootPart")
             if hrp then
-                local currentVelocity = hrp.Velocity
-                hrp.Velocity = Vector3.new(humanoid.MoveDirection.X * currentSpeed, currentVelocity.Y, humanoid.MoveDirection.Z * currentSpeed)
+                hrp.Velocity = humanoid.MoveDirection.Unit * currentSpeed
             end
+        else
+            humanoid.WalkSpeed = DEFAULT_WALKSPEED
         end
     end)
 end
