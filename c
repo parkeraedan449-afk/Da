@@ -168,7 +168,7 @@ local function onCharacterAdded(character)
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
-        local accelerationRate = 0.5
+        local accelerationRate = 0.02
 
         if isJumping and isMoving then
             -- Accelerate smoothly to target speed
