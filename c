@@ -209,13 +209,6 @@ local function onCharacterAdded(character)
             elseif humanoid.WalkSpeed > currentSpeed then
                 humanoid.WalkSpeed = currentSpeed
             end
-
-            -- Apply air control
-            local moveDir = humanoid.MoveDirection
-            if moveDir.Magnitude > 0 then
-                local horizontalVelocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * humanoid.WalkSpeed
-                rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
-            end
         else
             -- Reset speed when grounded
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
