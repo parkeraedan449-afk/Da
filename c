@@ -202,22 +202,29 @@ local function onCharacterAdded(character)
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
+        -- Jump Handling with Momentum
         if isJumping and isMoving then
-            -- Accelerate smoothly to target speed
+            -- Apply smooth acceleration to the speed while in the air
             if humanoid.WalkSpeed < currentSpeed then
                 humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
             elseif humanoid.WalkSpeed > currentSpeed then
                 humanoid.WalkSpeed = currentSpeed
             end
 
-            -- Apply air control
+            -- Apply horizontal momentum even when jumping (keep movement direction)
             local moveDir = humanoid.MoveDirection
             if moveDir.Magnitude > 0 then
                 local horizontalVelocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * humanoid.WalkSpeed
+                -- Keep vertical velocity intact (jumping)
                 rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
             end
+        elseif state == Enum.HumanoidStateType.Seated or state == Enum.HumanoidStateType.Physics then
+            -- Reset speed when seated or in special states
+            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
+                humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            end
         else
-            -- Reset speed when grounded
+            -- Reset speed to default when grounded
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
             end
