@@ -1,8 +1,3 @@
---[[
-  This script should be placed inside a LocalScript, for example, in StarterPlayer > StarterPlayerScripts in Roblox.
-  It will create a draggable GUI with a slider to control player speed when jumping and moving, and a textbox to modify acceleration.
-]]
-
 -- Services
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -15,7 +10,7 @@ local DEFAULT_WALKSPEED = 16
 local MIN_SPEED = DEFAULT_WALKSPEED
 local MAX_SPEED = 10000
 local currentSpeed = MIN_SPEED
-local accelerationRate = 0.02 -- Default acceleration
+local accelerationRate = 0.02 -- default acceleration
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -25,7 +20,7 @@ screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 250, 0, 180)
+mainFrame.Size = UDim2.new(0, 250, 0, 180) -- Increased height for text box
 mainFrame.Position = UDim2.new(0.5, -125, 0.5, -90)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
@@ -39,7 +34,7 @@ titleLabel.Name = "TitleLabel"
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "SpeedGlitchV3 By Haz3rk"
+titleLabel.Text = "SpeedGlitchV2 By Haz3rk"
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 18
 titleLabel.Parent = mainFrame
@@ -82,43 +77,34 @@ speedLabel.Font = Enum.Font.SourceSans
 speedLabel.TextSize = 16
 speedLabel.Parent = mainFrame
 
--- New: Acceleration Input
-local accelerationLabel = Instance.new("TextLabel")
-accelerationLabel.Name = "AccelerationLabel"
-accelerationLabel.Size = UDim2.new(0.5, 0, 0, 20)
-accelerationLabel.Position = UDim2.new(0.1, 0, 0, 105)
-accelerationLabel.BackgroundTransparency = 1
-accelerationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-accelerationLabel.Text = "Acceleration:"
-accelerationLabel.Font = Enum.Font.SourceSans
-accelerationLabel.TextSize = 16
-accelerationLabel.Parent = mainFrame
+local accelLabel = Instance.new("TextLabel")
+accelLabel.Name = "AccelLabel"
+accelLabel.Size = UDim2.new(0.4, 0, 0, 20)
+accelLabel.Position = UDim2.new(0.1, 0, 0, 110)
+accelLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+accelLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+accelLabel.Text = "Acceleration:"
+accelLabel.Font = Enum.Font.SourceSans
+accelLabel.TextSize = 16
+accelLabel.TextXAlignment = Enum.TextXAlignment.Left
+accelLabel.Parent = mainFrame
 
-local accelerationBox = Instance.new("TextBox")
-accelerationBox.Name = "AccelerationBox"
-accelerationBox.Size = UDim2.new(0.3, 0, 0, 20)
-accelerationBox.Position = UDim2.new(0.6, 0, 0, 105)
-accelerationBox.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-accelerationBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-accelerationBox.Text = tostring(accelerationRate)
-accelerationBox.Font = Enum.Font.SourceSans
-accelerationBox.TextSize = 16
-accelerationBox.ClearTextOnFocus = false
-accelerationBox.Parent = mainFrame
-
-accelerationBox.FocusLost:Connect(function(enterPressed)
-    local newRate = tonumber(accelerationBox.Text)
-    if newRate and newRate >= 0 and newRate <= 1 then
-        accelerationRate = newRate
-    else
-        accelerationBox.Text = tostring(accelerationRate)
-    end
-end)
+local accelTextBox = Instance.new("TextBox")
+accelTextBox.Name = "AccelTextBox"
+accelTextBox.Size = UDim2.new(0.4, 0, 0, 25)
+accelTextBox.Position = UDim2.new(0.55, 0, 0, 105)
+accelTextBox.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+accelTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+accelTextBox.Text = tostring(accelerationRate)
+accelTextBox.Font = Enum.Font.SourceSans
+accelTextBox.TextSize = 16
+accelTextBox.ClearTextOnFocus = false
+accelTextBox.Parent = mainFrame
 
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Size = UDim2.new(0.8, 0, 0, 25)
-toggleButton.Position = UDim2.new(0.1, 0, 0, 135)
+toggleButton.Position = UDim2.new(0.1, 0, 0, 140)
 toggleButton.BackgroundColor3 = Color3.fromRGB(80, 180, 80)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Text = "Speed Glitch: ON"
@@ -128,6 +114,7 @@ toggleButton.Parent = mainFrame
 
 -- GUI Logic & State
 local isGlitchEnabled = true
+local dragging = false
 
 closeButton.MouseButton1Click:Connect(function()
     screenGui:Destroy()
@@ -144,9 +131,7 @@ toggleButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Slider Logic for PC and Mobile
-local dragging = false
-
+-- Slider dragging logic
 sliderHandle.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
@@ -171,6 +156,21 @@ UserInputService.InputChanged:Connect(function(input)
 
         currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 4)
         speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
+    end
+end)
+
+-- Acceleration TextBox input handling
+accelTextBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local inputValue = tonumber(accelTextBox.Text)
+        if inputValue and inputValue > 0 and inputValue <= 1 then
+            accelerationRate = inputValue
+            accelTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            -- Invalid input, revert text box text and color
+            accelTextBox.Text = tostring(accelerationRate)
+            accelTextBox.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
     end
 end)
 
@@ -209,9 +209,6 @@ local function onCharacterAdded(character)
             elseif humanoid.WalkSpeed > currentSpeed then
                 humanoid.WalkSpeed = currentSpeed
             end
-            if not isJumping then
-              humanoid.WalkSpeed = 16
-            end 
 
             -- Apply air control
             local moveDir = humanoid.MoveDirection
@@ -220,13 +217,8 @@ local function onCharacterAdded(character)
                 rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
             end
         else
-            -- Decelerate smoothly to default
-            if humanoid.WalkSpeed > DEFAULT_WALKSPEED then
-                humanoid.WalkSpeed = humanoid.WalkSpeed - (humanoid.WalkSpeed - DEFAULT_WALKSPEED) * 1
-                if humanoid.WalkSpeed < DEFAULT_WALKSPEED then
-                    humanoid.WalkSpeed = DEFAULT_WALKSPEED
-                end
-            else
+            -- Reset speed when grounded
+            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
             end
         end
