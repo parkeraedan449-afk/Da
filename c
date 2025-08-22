@@ -20,8 +20,8 @@ screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 250, 0, 150) -- adjusted for space
-mainFrame.Position = UDim2.new(0.5, -125, 0.5, -75)
+mainFrame.Size = UDim2.new(0, 250, 0, 180) -- Increased height for text box
+mainFrame.Position = UDim2.new(0.5, -125, 0.5, -90)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
 mainFrame.BorderSizePixel = 2
@@ -207,6 +207,13 @@ local function onCharacterAdded(character)
                 humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
             elseif humanoid.WalkSpeed > currentSpeed then
                 humanoid.WalkSpeed = currentSpeed
+            end
+
+            -- Apply air control
+            local moveDir = humanoid.MoveDirection
+            if moveDir.Magnitude > 0 then
+                local horizontalVelocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * humanoid.WalkSpeed
+                rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
             end
         else
             -- Apply horizontal velocity even when grounded
