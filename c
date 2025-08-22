@@ -222,7 +222,7 @@ local function onCharacterAdded(character)
         else
             -- Decelerate smoothly to default
             if humanoid.WalkSpeed > DEFAULT_WALKSPEED then
-                humanoid.WalkSpeed = humanoid.WalkSpeed - (humanoid.WalkSpeed - DEFAULT_WALKSPEED) * accelerationRate
+                humanoid.WalkSpeed = humanoid.WalkSpeed - (humanoid.WalkSpeed - DEFAULT_WALKSPEED) * 1
                 if humanoid.WalkSpeed < DEFAULT_WALKSPEED then
                     humanoid.WalkSpeed = DEFAULT_WALKSPEED
                 end
