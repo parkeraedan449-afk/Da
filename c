@@ -181,11 +181,13 @@ local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
     local rootPart = character:WaitForChild("HumanoidRootPart")
 
+    -- Disconnect previous connection to prevent memory leaks
     if runServiceConnection then
         runServiceConnection:Disconnect()
         runServiceConnection = nil
     end
 
+    -- Set WalkSpeed to default when the script starts or character respawns
     humanoid.WalkSpeed = DEFAULT_WALKSPEED
 
     runServiceConnection = RunService.RenderStepped:Connect(function()
@@ -217,7 +219,14 @@ local function onCharacterAdded(character)
                 rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
             end
         else
-            -- Reset speed when grounded
+            -- Apply the horizontal velocity (momentum) even when grounded
+            if isMoving then
+                local moveDir = humanoid.MoveDirection
+                local horizontalVelocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * humanoid.WalkSpeed
+                rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
+            end
+
+            -- Reset WalkSpeed when not moving
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
             end
@@ -226,6 +235,3 @@ local function onCharacterAdded(character)
 end
 
 player.CharacterAdded:Connect(onCharacterAdded)
-if player.Character then
-    onCharacterAdded(player.Character)
-end
