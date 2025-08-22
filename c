@@ -209,6 +209,9 @@ local function onCharacterAdded(character)
             elseif humanoid.WalkSpeed > currentSpeed then
                 humanoid.WalkSpeed = currentSpeed
             end
+            if not isJumping then
+              humanoid.WalkSpeed = 16
+            end 
 
             -- Apply air control
             local moveDir = humanoid.MoveDirection
