@@ -181,23 +181,60 @@ local runServiceConnection = nil
 
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
-    local lastOnGround = false
-    groundedTime = 0
+    local rootPart = character:WaitForChild("HumanoidRootPart")
+    groundedTime = 0 -- Reset grounded time when the character is added
 
-    humanoid:GetPropertyChangedSignal("FloorMaterial"):Connect(function()
+    runServiceConnection = RunService.RenderStepped:Connect(function()
+        if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
+
+        -- Check if grounded and update groundedTime
         if humanoid.FloorMaterial ~= Enum.Material.Air then
-            -- Player is grounded
             groundedTime = groundedTime + RunService.Heartbeat:Wait()
-            if groundedTime > groundedTimeThreshold then
-                -- Reset speed if grounded for more than the threshold
-                currentSpeed = MIN_SPEED
-                speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
+        else
+            groundedTime = 0
+        end
+
+        -- Reset speed if grounded for more than threshold
+        if groundedTime > groundedTimeThreshold then
+            currentSpeed = MIN_SPEED
+            speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
+        end
+
+        if not isGlitchEnabled then
+            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
+                humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            end
+            return
+        end
+
+        local state = humanoid:GetState()
+        local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
+        local isMoving = humanoid.MoveDirection.Magnitude > 0.1
+
+        if isJumping and isMoving then
+            -- Accelerate smoothly to target speed
+            if humanoid.WalkSpeed < currentSpeed then
+                humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
+            elseif humanoid.WalkSpeed > currentSpeed then
+                humanoid.WalkSpeed = currentSpeed
+            end
+
+            -- Apply air control
+            local moveDir = humanoid.MoveDirection
+            if moveDir.Magnitude > 0 then
+                local horizontalVelocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * humanoid.WalkSpeed
+                rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
             end
         else
-            -- Player is not grounded
-            groundedTime = 0
+            -- Reset speed when grounded and no longer moving
+            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
+                humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            end
         end
     end)
 end
 
 player.CharacterAdded:Connect(onCharacterAdded)
+if player.Character then
+    onCharacterAdded(player.Character)
+end
