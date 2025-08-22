@@ -1,6 +1,6 @@
 --[[
   This script should be placed inside a LocalScript, for example, in StarterPlayer > StarterPlayerScripts in Roblox.
-  It will create a draggable GUI with a slider to control player speed when jumping and moving.
+  It will create a draggable GUI with a slider to control player speed when jumping and moving, and a textbox to modify acceleration.
 ]]
 
 -- Services
@@ -15,6 +15,7 @@ local DEFAULT_WALKSPEED = 16
 local MIN_SPEED = DEFAULT_WALKSPEED
 local MAX_SPEED = 10000
 local currentSpeed = MIN_SPEED
+local accelerationRate = 0.02 -- Default acceleration
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -24,8 +25,8 @@ screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 250, 0, 150)
-mainFrame.Position = UDim2.new(0.5, -125, 0.5, -75)
+mainFrame.Size = UDim2.new(0, 250, 0, 180)
+mainFrame.Position = UDim2.new(0.5, -125, 0.5, -90)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
 mainFrame.BorderSizePixel = 2
@@ -38,7 +39,7 @@ titleLabel.Name = "TitleLabel"
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "SpeedGlitchV2 By Haz3rk"
+titleLabel.Text = "SpeedGlitchV3 By Haz3rk"
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 18
 titleLabel.Parent = mainFrame
@@ -81,10 +82,43 @@ speedLabel.Font = Enum.Font.SourceSans
 speedLabel.TextSize = 16
 speedLabel.Parent = mainFrame
 
+-- New: Acceleration Input
+local accelerationLabel = Instance.new("TextLabel")
+accelerationLabel.Name = "AccelerationLabel"
+accelerationLabel.Size = UDim2.new(0.5, 0, 0, 20)
+accelerationLabel.Position = UDim2.new(0.1, 0, 0, 105)
+accelerationLabel.BackgroundTransparency = 1
+accelerationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+accelerationLabel.Text = "Acceleration:"
+accelerationLabel.Font = Enum.Font.SourceSans
+accelerationLabel.TextSize = 16
+accelerationLabel.Parent = mainFrame
+
+local accelerationBox = Instance.new("TextBox")
+accelerationBox.Name = "AccelerationBox"
+accelerationBox.Size = UDim2.new(0.3, 0, 0, 20)
+accelerationBox.Position = UDim2.new(0.6, 0, 0, 105)
+accelerationBox.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+accelerationBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+accelerationBox.Text = tostring(accelerationRate)
+accelerationBox.Font = Enum.Font.SourceSans
+accelerationBox.TextSize = 16
+accelerationBox.ClearTextOnFocus = false
+accelerationBox.Parent = mainFrame
+
+accelerationBox.FocusLost:Connect(function(enterPressed)
+    local newRate = tonumber(accelerationBox.Text)
+    if newRate and newRate >= 0 and newRate <= 1 then
+        accelerationRate = newRate
+    else
+        accelerationBox.Text = tostring(accelerationRate)
+    end
+end)
+
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Size = UDim2.new(0.8, 0, 0, 25)
-toggleButton.Position = UDim2.new(0.1, 0, 0, 115)
+toggleButton.Position = UDim2.new(0.1, 0, 0, 135)
 toggleButton.BackgroundColor3 = Color3.fromRGB(80, 180, 80)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Text = "Speed Glitch: ON"
@@ -167,8 +201,6 @@ local function onCharacterAdded(character)
         local state = humanoid:GetState()
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
-
-        local accelerationRate = 0.02
 
         if isJumping and isMoving then
             -- Accelerate smoothly to target speed
