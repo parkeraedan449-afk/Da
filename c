@@ -191,8 +191,6 @@ local function onCharacterAdded(character)
     humanoid.WalkSpeed = DEFAULT_WALKSPEED
 
     runServiceConnection = RunService.RenderStepped:Connect(function()
-        if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
-
         if not isGlitchEnabled then
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
@@ -205,7 +203,6 @@ local function onCharacterAdded(character)
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
         if isJumping and isMoving then
-            -- Accelerate smoothly to target speed
             if humanoid.WalkSpeed < currentSpeed then
                 humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
             elseif humanoid.WalkSpeed > currentSpeed then
@@ -219,14 +216,14 @@ local function onCharacterAdded(character)
                 rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
             end
         else
-            -- Apply the horizontal velocity (momentum) even when grounded
+            -- Apply horizontal velocity even when grounded
             if isMoving then
                 local moveDir = humanoid.MoveDirection
                 local horizontalVelocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * humanoid.WalkSpeed
                 rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
             end
 
-            -- Reset WalkSpeed when not moving
+            -- Reset WalkSpeed if not moving
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
             end
