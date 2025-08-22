@@ -11,6 +11,8 @@ local MIN_SPEED = DEFAULT_WALKSPEED
 local MAX_SPEED = 10000
 local currentSpeed = MIN_SPEED
 local accelerationRate = 0.02 -- default acceleration
+local groundedTimeThreshold = 0.15 -- time threshold before speed reset when grounded
+local groundedTime = 0 -- track how long the player has been grounded
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -179,60 +181,23 @@ local runServiceConnection = nil
 
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
-    local rootPart = character:WaitForChild("HumanoidRootPart")
+    local lastOnGround = false
+    groundedTime = 0
 
-    if runServiceConnection then
-        runServiceConnection:Disconnect()
-        runServiceConnection = nil
-    end
-
-    humanoid.WalkSpeed = DEFAULT_WALKSPEED
-
-    runServiceConnection = RunService.RenderStepped:Connect(function()
-        if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
-
-        if not isGlitchEnabled then
-            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
-                humanoid.WalkSpeed = DEFAULT_WALKSPEED
-            end
-            return
-        end
-
-        local state = humanoid:GetState()
-        local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
-        local isMoving = humanoid.MoveDirection.Magnitude > 0.1
-
-        -- Jump Handling with Momentum
-        if isJumping and isMoving then
-            -- Apply smooth acceleration to the speed while in the air
-            if humanoid.WalkSpeed < currentSpeed then
-                humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
-            elseif humanoid.WalkSpeed > currentSpeed then
-                humanoid.WalkSpeed = currentSpeed
-            end
-
-            -- Apply horizontal momentum even when jumping (keep movement direction)
-            local moveDir = humanoid.MoveDirection
-            if moveDir.Magnitude > 0 then
-                local horizontalVelocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * humanoid.WalkSpeed
-                -- Keep vertical velocity intact (jumping)
-                rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
-            end
-        elseif state == Enum.HumanoidStateType.Seated or state == Enum.HumanoidStateType.Physics then
-            -- Reset speed when seated or in special states
-            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
-                humanoid.WalkSpeed = DEFAULT_WALKSPEED
+    humanoid:GetPropertyChangedSignal("FloorMaterial"):Connect(function()
+        if humanoid.FloorMaterial ~= Enum.Material.Air then
+            -- Player is grounded
+            groundedTime = groundedTime + RunService.Heartbeat:Wait()
+            if groundedTime > groundedTimeThreshold then
+                -- Reset speed if grounded for more than the threshold
+                currentSpeed = MIN_SPEED
+                speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
             end
         else
-            -- Reset speed to default when grounded
-            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
-                humanoid.WalkSpeed = DEFAULT_WALKSPEED
-            end
+            -- Player is not grounded
+            groundedTime = 0
         end
     end)
 end
 
 player.CharacterAdded:Connect(onCharacterAdded)
-if player.Character then
-    onCharacterAdded(player.Character)
-end
