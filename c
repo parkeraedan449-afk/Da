@@ -11,9 +11,9 @@ local RunService = game:GetService("RunService")
 local player = game.Players.LocalPlayer
 
 -- Configuration
-local DEFAULT_WALKSPEED = 16 -- Default Roblox walkspeed
+local DEFAULT_WALKSPEED = 16
 local MIN_SPEED = DEFAULT_WALKSPEED
-local MAX_SPEED = 10000 -- Maximum speed for the glitch
+local MAX_SPEED = 10000
 local currentSpeed = MIN_SPEED
 
 -- Create GUI
@@ -38,7 +38,7 @@ titleLabel.Name = "TitleLabel"
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "Speed Glitch By Haz3rk"
+titleLabel.Text = "SpeedGlitchV2 By Haz3rk"
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 18
 titleLabel.Parent = mainFrame
@@ -129,12 +129,12 @@ UserInputService.InputChanged:Connect(function(input)
     if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local sliderWidth = speedSlider.AbsoluteSize.X
         local sliderX = speedSlider.AbsolutePosition.X
-        
+
         local relativeX = math.clamp(input.Position.X - sliderX, 0, sliderWidth)
         local percentage = relativeX / sliderWidth
-        
+
         sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
-        
+
         currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 4)
         speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
     end
@@ -145,14 +145,13 @@ local runServiceConnection = nil
 
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
+    local rootPart = character:WaitForChild("HumanoidRootPart")
 
-    -- Disconnect previous connection to prevent memory leaks
     if runServiceConnection then
         runServiceConnection:Disconnect()
         runServiceConnection = nil
     end
 
-    -- Set WalkSpeed to default when the script starts or character respawns
     humanoid.WalkSpeed = DEFAULT_WALKSPEED
 
     runServiceConnection = RunService.RenderStepped:Connect(function()
@@ -169,22 +168,37 @@ local function onCharacterAdded(character)
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
+        local accelerationRate = 0.5
+
         if isJumping and isMoving then
-            if humanoid.WalkSpeed ~= currentSpeed then
+            -- Accelerate smoothly to target speed
+            if humanoid.WalkSpeed < currentSpeed then
+                humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
+            elseif humanoid.WalkSpeed > currentSpeed then
                 humanoid.WalkSpeed = currentSpeed
             end
+
+            -- Apply air control
+            local moveDir = humanoid.MoveDirection
+            if moveDir.Magnitude > 0 then
+                local horizontalVelocity = Vector3.new(moveDir.X, 0, moveDir.Z).Unit * humanoid.WalkSpeed
+                rootPart.Velocity = Vector3.new(horizontalVelocity.X, rootPart.Velocity.Y, horizontalVelocity.Z)
+            end
         else
-            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
+            -- Decelerate smoothly to default
+            if humanoid.WalkSpeed > DEFAULT_WALKSPEED then
+                humanoid.WalkSpeed = humanoid.WalkSpeed - (humanoid.WalkSpeed - DEFAULT_WALKSPEED) * accelerationRate
+                if humanoid.WalkSpeed < DEFAULT_WALKSPEED then
+                    humanoid.WalkSpeed = DEFAULT_WALKSPEED
+                end
+            else
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
             end
         end
     end)
 end
 
--- Connect to future character spawns
 player.CharacterAdded:Connect(onCharacterAdded)
-
--- Handle character if it already exists when the script runs
 if player.Character then
     onCharacterAdded(player.Character)
 end
