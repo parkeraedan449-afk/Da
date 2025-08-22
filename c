@@ -201,21 +201,19 @@ local function onCharacterAdded(character)
         local isJumping = state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
-        if isJumping or state == Enum.HumanoidStateType.Freefall then
+        if isJumping and isMoving then
             -- Accelerate smoothly to target speed
             if humanoid.WalkSpeed < currentSpeed then
                 humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
             elseif humanoid.WalkSpeed > currentSpeed then
                 humanoid.WalkSpeed = currentSpeed
             end
-        elseif isMoving then
-            -- Apply speed glitch when moving on the ground
-            humanoid.WalkSpeed = currentSpeed
         else
-            -- Reset WalkSpeed when not moving
-            humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            -- Reset WalkSpeed to default when grounded
+            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
+                humanoid.WalkSpeed = DEFAULT_WALKSPEED
+            end
         end
     end)
 end
-
 player.CharacterAdded:Connect(onCharacterAdded)
