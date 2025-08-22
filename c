@@ -179,6 +179,7 @@ local runServiceConnection = nil
 
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
+    local rootPart = character:WaitForChild("HumanoidRootPart")
 
     if runServiceConnection then
         runServiceConnection:Disconnect()
@@ -209,11 +210,15 @@ local function onCharacterAdded(character)
                 humanoid.WalkSpeed = currentSpeed
             end
         else
-            -- Reset WalkSpeed to default when grounded
+            -- Reset speed when grounded
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
             end
         end
     end)
 end
+
 player.CharacterAdded:Connect(onCharacterAdded)
+if player.Character then
+    onCharacterAdded(player.Character)
+end
