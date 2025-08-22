@@ -209,12 +209,11 @@ local function onCharacterAdded(character)
                 humanoid.WalkSpeed = currentSpeed
             end
         else
-            -- Reset WalkSpeed to default when grounded
-            if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
+            -- Only reset WalkSpeed if the player is not moving
+            if not isMoving then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
             end
         end
     end)
 end
-
 player.CharacterAdded:Connect(onCharacterAdded)
