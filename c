@@ -1,7 +1,7 @@
 --[[
   LocalScript (e.g., StarterPlayer > StarterPlayerScripts)
   Creates a draggable GUI with slider + text input for speed,
-  and text input for acceleration.
+  and text input for acceleration (safe capped).
 ]]
 
 -- Services
@@ -16,7 +16,7 @@ local DEFAULT_WALKSPEED = 16
 local MIN_SPEED = DEFAULT_WALKSPEED
 local MAX_SPEED = 20000
 local currentSpeed = MIN_SPEED
-local accelerationRate = 0.05 -- acceleration (0.01 = slow, 0.5 = fast)
+local accelerationRate = 0.05 -- can now go up to 5 safely
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -191,7 +191,7 @@ speedTextBox.FocusLost:Connect(function(enterPressed)
             speedTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 
             -- update slider position to match input
-            local percentage = ((currentSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)) ^ 4
+            local percentage = ((currentSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)) ^ (1/4)
             sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
         else
             speedTextBox.Text = tostring(math.floor(currentSpeed))
@@ -200,11 +200,11 @@ speedTextBox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- Acceleration box
+-- Acceleration box logic (safe capped)
 accelTextBox.FocusLost:Connect(function(enterPressed)
     if enterPressed then
         local inputValue = tonumber(accelTextBox.Text)
-        if inputValue and inputValue > -5 and inputValue <= 5 then
+        if inputValue and inputValue > 0 and inputValue <= 5 then -- safe cap at 5
             accelerationRate = inputValue
             accelTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
         else
@@ -240,11 +240,9 @@ local function onCharacterAdded(character)
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
         if isJumping and isMoving then
-            if humanoid.WalkSpeed < currentSpeed then
-                humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
-            elseif humanoid.WalkSpeed > currentSpeed then
-                humanoid.WalkSpeed = currentSpeed
-            end
+            -- acceleration with safe cap
+            local diff = currentSpeed - humanoid.WalkSpeed
+            humanoid.WalkSpeed = humanoid.WalkSpeed + diff * math.clamp(accelerationRate, 0, 5)
         else
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
