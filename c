@@ -14,7 +14,7 @@ local player = game.Players.LocalPlayer
 -- Configuration
 local DEFAULT_WALKSPEED = 16
 local MIN_SPEED = DEFAULT_WALKSPEED
-local MAX_SPEED = 20000
+local MAX_SPEED = 2000000
 local currentSpeed = MIN_SPEED
 local accelerationRate = 0.05 -- can now go up to 5 safely
 
@@ -177,7 +177,7 @@ UserInputService.InputChanged:Connect(function(input)
         sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
 
         -- exponential scaling
-        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 4)
+        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 9)
         speedTextBox.Text = tostring(math.floor(currentSpeed)) -- sync with input
     end
 end)
