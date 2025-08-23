@@ -191,7 +191,7 @@ speedTextBox.FocusLost:Connect(function(enterPressed)
             speedTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 
             -- update slider position to match input
-            local percentage = ((currentSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)) ^ (1/4)
+            local percentage = ((currentSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)) ^ 4
             sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
         else
             speedTextBox.Text = tostring(math.floor(currentSpeed))
@@ -204,7 +204,7 @@ end)
 accelTextBox.FocusLost:Connect(function(enterPressed)
     if enterPressed then
         local inputValue = tonumber(accelTextBox.Text)
-        if inputValue and inputValue > 0 and inputValue <= 1 then
+        if inputValue and inputValue > -5 and inputValue <= 5 then
             accelerationRate = inputValue
             accelTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
         else
