@@ -1,6 +1,7 @@
 --[[
   LocalScript (e.g., StarterPlayer > StarterPlayerScripts)
-  Creates a draggable GUI with a slider + acceleration for "speed glitch"
+  Creates a draggable GUI with slider + text input for speed,
+  and text input for acceleration.
 ]]
 
 -- Services
@@ -25,8 +26,8 @@ screenGui.ResetOnSpawn = false
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 250, 0, 170)
-mainFrame.Position = UDim2.new(0.5, -125, 0.5, -85)
+mainFrame.Size = UDim2.new(0, 250, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -125, 0.5, -100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 mainFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
 mainFrame.BorderSizePixel = 2
@@ -55,6 +56,7 @@ closeButton.Font = Enum.Font.SourceSansBold
 closeButton.TextSize = 18
 closeButton.Parent = titleLabel
 
+-- Speed slider
 local speedSlider = Instance.new("Frame")
 speedSlider.Name = "SpeedSlider"
 speedSlider.Size = UDim2.new(0.8, 0, 0, 20)
@@ -70,17 +72,32 @@ sliderHandle.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 sliderHandle.BorderSizePixel = 0
 sliderHandle.Parent = speedSlider
 
+-- Speed label + text box
 local speedLabel = Instance.new("TextLabel")
 speedLabel.Name = "SpeedLabel"
-speedLabel.Size = UDim2.new(1, 0, 0, 20)
-speedLabel.Position = UDim2.new(0, 0, 0, 85)
-speedLabel.BackgroundTransparency = 1
+speedLabel.Size = UDim2.new(0.4, 0, 0, 20)
+speedLabel.Position = UDim2.new(0.1, 0, 0, 85)
+speedLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
+speedLabel.Text = "Speed:"
 speedLabel.Font = Enum.Font.SourceSans
 speedLabel.TextSize = 16
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
 speedLabel.Parent = mainFrame
 
+local speedTextBox = Instance.new("TextBox")
+speedTextBox.Name = "SpeedTextBox"
+speedTextBox.Size = UDim2.new(0.4, 0, 0, 25)
+speedTextBox.Position = UDim2.new(0.55, 0, 0, 80)
+speedTextBox.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+speedTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedTextBox.Text = tostring(currentSpeed)
+speedTextBox.Font = Enum.Font.SourceSans
+speedTextBox.TextSize = 16
+speedTextBox.ClearTextOnFocus = false
+speedTextBox.Parent = mainFrame
+
+-- Acceleration
 local accelLabel = Instance.new("TextLabel")
 accelLabel.Name = "AccelLabel"
 accelLabel.Size = UDim2.new(0.4, 0, 0, 20)
@@ -105,10 +122,11 @@ accelTextBox.TextSize = 16
 accelTextBox.ClearTextOnFocus = false
 accelTextBox.Parent = mainFrame
 
+-- Toggle button
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "ToggleButton"
 toggleButton.Size = UDim2.new(0.8, 0, 0, 25)
-toggleButton.Position = UDim2.new(0.1, 0, 0, 140)
+toggleButton.Position = UDim2.new(0.1, 0, 0, 150)
 toggleButton.BackgroundColor3 = Color3.fromRGB(80, 180, 80)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Text = "Speed Glitch: ON"
@@ -135,7 +153,7 @@ toggleButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Slider
+-- Slider control
 sliderHandle.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
@@ -160,7 +178,25 @@ UserInputService.InputChanged:Connect(function(input)
 
         -- exponential scaling
         currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 4)
-        speedLabel.Text = "Speed: " .. tostring(math.floor(currentSpeed))
+        speedTextBox.Text = tostring(math.floor(currentSpeed)) -- sync with input
+    end
+end)
+
+-- Speed box logic
+speedTextBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local inputValue = tonumber(speedTextBox.Text)
+        if inputValue and inputValue >= MIN_SPEED and inputValue <= MAX_SPEED then
+            currentSpeed = inputValue
+            speedTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+            -- update slider position to match input
+            local percentage = ((currentSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)) ^ (1/4)
+            sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
+        else
+            speedTextBox.Text = tostring(math.floor(currentSpeed))
+            speedTextBox.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
     end
 end)
 
@@ -183,7 +219,6 @@ local runServiceConnection = nil
 
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
-
     humanoid.WalkSpeed = DEFAULT_WALKSPEED
 
     if runServiceConnection then
@@ -205,7 +240,6 @@ local function onCharacterAdded(character)
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
         if isJumping and isMoving then
-            -- accelerate smoothly
             if humanoid.WalkSpeed < currentSpeed then
                 humanoid.WalkSpeed = humanoid.WalkSpeed + (currentSpeed - humanoid.WalkSpeed) * accelerationRate
             elseif humanoid.WalkSpeed > currentSpeed then
