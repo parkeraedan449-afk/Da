@@ -13,7 +13,7 @@ local player = game.Players.LocalPlayer
 -- Configuration
 local DEFAULT_WALKSPEED = 16
 local MIN_SPEED = DEFAULT_WALKSPEED
-local MAX_SPEED = 200
+local MAX_SPEED = 20000
 local currentSpeed = MIN_SPEED
 local accelerationRate = 0.05 -- acceleration (0.01 = slow, 0.5 = fast)
 
