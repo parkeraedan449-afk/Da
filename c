@@ -1,7 +1,7 @@
 --[[
   LocalScript (e.g., StarterPlayer > StarterPlayerScripts)
-  Creates a draggable GUI with slider + text input for speed,
-  and text input for acceleration (safe capped).
+  Draggable GUI with (1) slider + text input for speed, and (2) text input for acceleration.
+  Acceleration is dt-based (per second) and safe-capped to 5.
 ]]
 
 -- Services
@@ -14,9 +14,9 @@ local player = game.Players.LocalPlayer
 -- Configuration
 local DEFAULT_WALKSPEED = 16
 local MIN_SPEED = DEFAULT_WALKSPEED
-local MAX_SPEED = 2000000
+local MAX_SPEED = 20000
 local currentSpeed = MIN_SPEED
-local accelerationRate = 0.05 -- can now go up to 5 safely
+local accelerationRate = 0.50 -- per-second factor; try 0.1 (slow) .. 5 (very fast)
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -40,7 +40,7 @@ titleLabel.Name = "TitleLabel"
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "Speed Glitch"
+titleLabel.Text = "Speed GlitchV2 By Haz3rk"
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 18
 titleLabel.Parent = mainFrame
@@ -70,6 +70,7 @@ sliderHandle.Size = UDim2.new(0, 10, 0, 30)
 sliderHandle.Position = UDim2.new(0, -5, -0.25, 0)
 sliderHandle.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
 sliderHandle.BorderSizePixel = 0
+sliderHandle.Text = ""
 sliderHandle.Parent = speedSlider
 
 -- Speed label + text box
@@ -117,6 +118,7 @@ accelTextBox.Position = UDim2.new(0.55, 0, 0, 110)
 accelTextBox.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 accelTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 accelTextBox.Text = tostring(accelerationRate)
+accelTextBox.PlaceholderText = "0.1 – 5"
 accelTextBox.Font = Enum.Font.SourceSans
 accelTextBox.TextSize = 16
 accelTextBox.ClearTextOnFocus = false
@@ -177,41 +179,47 @@ UserInputService.InputChanged:Connect(function(input)
         sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
 
         -- exponential scaling
-        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 9)
+        currentSpeed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * (percentage ^ 4)
         speedTextBox.Text = tostring(math.floor(currentSpeed)) -- sync with input
+        speedTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     end
 end)
 
--- Speed box logic
-speedTextBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        local inputValue = tonumber(speedTextBox.Text)
-        if inputValue and inputValue >= MIN_SPEED and inputValue <= MAX_SPEED then
-            currentSpeed = inputValue
-            speedTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+-- Speed text box logic (updates even without Enter)
+local function setSpeedFromText()
+    local inputValue = tonumber(speedTextBox.Text)
+    if inputValue and inputValue >= MIN_SPEED and inputValue <= MAX_SPEED then
+        currentSpeed = inputValue
+        speedTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 
-            -- update slider position to match input
-            local percentage = ((currentSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)) ^ (1/4)
-            sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
-        else
-            speedTextBox.Text = tostring(math.floor(currentSpeed))
-            speedTextBox.TextColor3 = Color3.fromRGB(255, 100, 100)
-        end
+        -- update slider position to match input
+        local percentage = ((currentSpeed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)) ^ (1/4)
+        sliderHandle.Position = UDim2.new(percentage, -sliderHandle.AbsoluteSize.X / 2, -0.25, 0)
+    else
+        speedTextBox.Text = tostring(math.floor(currentSpeed))
+        speedTextBox.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
+end
+
+speedTextBox.FocusLost:Connect(function()
+    setSpeedFromText()
 end)
 
--- Acceleration box logic (safe capped)
-accelTextBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        local inputValue = tonumber(accelTextBox.Text)
-        if inputValue and inputValue > 0 and inputValue <= 5 then -- safe cap at 5
-            accelerationRate = inputValue
-            accelTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        else
-            accelTextBox.Text = tostring(accelerationRate)
-            accelTextBox.TextColor3 = Color3.fromRGB(255, 100, 100)
-        end
+-- Acceleration box logic (updates even without Enter; safe capped)
+local function setAccelFromText()
+    local inputValue = tonumber(accelTextBox.Text)
+    if inputValue and inputValue > 0 then
+        accelerationRate = math.clamp(inputValue, 0.01, 5) -- safe cap at 5
+        accelTextBox.Text = tostring(accelerationRate)
+        accelTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        accelTextBox.Text = tostring(accelerationRate)
+        accelTextBox.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
+end
+
+accelTextBox.FocusLost:Connect(function()
+    setAccelFromText()
 end)
 
 -- Core Logic
@@ -225,7 +233,7 @@ local function onCharacterAdded(character)
         runServiceConnection:Disconnect()
     end
 
-    runServiceConnection = RunService.RenderStepped:Connect(function()
+    runServiceConnection = RunService.RenderStepped:Connect(function(dt)
         if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
 
         if not isGlitchEnabled then
@@ -240,9 +248,17 @@ local function onCharacterAdded(character)
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
         if isJumping and isMoving then
-            -- acceleration with safe cap
+            -- dt-scaled easing toward target:
+            -- k is the fraction of remaining difference applied this frame.
             local diff = currentSpeed - humanoid.WalkSpeed
-            humanoid.WalkSpeed = humanoid.WalkSpeed + diff * math.clamp(accelerationRate, 0, 5)
+            if math.abs(diff) > 1e-3 then
+                local k = math.clamp(accelerationRate * dt, 0, 1) -- 0..1 of the gap per frame
+                humanoid.WalkSpeed = humanoid.WalkSpeed + diff * k
+                -- snap when very close
+                if math.abs(currentSpeed - humanoid.WalkSpeed) < 0.05 then
+                    humanoid.WalkSpeed = currentSpeed
+                end
+            end
         else
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
