@@ -225,7 +225,7 @@ local function onCharacterAdded(character)
         runServiceConnection:Disconnect()
     end
 
-    runServiceConnection = RunService.RenderStepped:Connect(function()
+    runServiceConnection = RunService.RenderStepped:Connect(function(dt)
         if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then return end
 
         if not isGlitchEnabled then
@@ -240,9 +240,9 @@ local function onCharacterAdded(character)
         local isMoving = humanoid.MoveDirection.Magnitude > 0.1
 
         if isJumping and isMoving then
-            -- acceleration with safe cap
+            -- smooth acceleration based on deltaTime (jump only)
             local diff = currentSpeed - humanoid.WalkSpeed
-            humanoid.WalkSpeed = humanoid.WalkSpeed + diff * math.clamp(accelerationRate, 0, 5)
+            humanoid.WalkSpeed = humanoid.WalkSpeed + diff * math.clamp(accelerationRate * dt * 10, 0, 1)
         else
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
