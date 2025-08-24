@@ -40,7 +40,7 @@ titleLabel.Name = "TitleLabel"
 titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "--Speed-GlitchV2-By-Haz3rk--"
+titleLabel.Text = "-Speed-GlitchV2-By-Haz3rk-"
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 18
 titleLabel.Parent = mainFrame
@@ -242,7 +242,7 @@ local function onCharacterAdded(character)
         if isJumping and isMoving then
             -- smooth acceleration based on deltaTime (jump only)
             local diff = currentSpeed - humanoid.WalkSpeed
-            humanoid.WalkSpeed = humanoid.WalkSpeed + diff * math.clamp((accelerationRate * 30) * dt * 10, 0, 1)
+            humanoid.WalkSpeed = humanoid.WalkSpeed + diff * accelerationRate
         else
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
