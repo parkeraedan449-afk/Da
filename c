@@ -16,7 +16,7 @@ local DEFAULT_WALKSPEED = 16
 local MIN_SPEED = DEFAULT_WALKSPEED
 local MAX_SPEED = 2000000
 local currentSpeed = MIN_SPEED
-local accelerationRate = 0.05 -- can now go up to 5 safely
+local accelerationRate = 0.05 -- can now go up to 20 safely
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -204,7 +204,7 @@ end)
 accelTextBox.FocusLost:Connect(function(enterPressed)
     if enterPressed then
         local inputValue = tonumber(accelTextBox.Text)
-        if inputValue and inputValue > 0 and inputValue <= 5 then -- safe cap at 5
+        if inputValue and inputValue > 0 and inputValue <= 20 then -- safe cap at 20
             accelerationRate = inputValue
             accelTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
         else
@@ -242,7 +242,7 @@ local function onCharacterAdded(character)
         if isJumping and isMoving then
             -- smooth acceleration based on deltaTime (jump only)
             local diff = currentSpeed - humanoid.WalkSpeed
-            humanoid.WalkSpeed = humanoid.WalkSpeed + diff * math.clamp(accelerationRate * dt * 10, 0, 1)
+            humanoid.WalkSpeed = humanoid.WalkSpeed + diff * math.clamp((accelerationRate * 30) * dt * 10, 0, 1)
         else
             if humanoid.WalkSpeed ~= DEFAULT_WALKSPEED then
                 humanoid.WalkSpeed = DEFAULT_WALKSPEED
