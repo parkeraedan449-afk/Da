@@ -1,0 +1,174 @@
+-- LocalScript inside StarterGui
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local runService = game:GetService("RunService")
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DrawingGui"
+screenGui.Parent = playerGui
+
+-- Drawing Frame (the white box)
+local box = Instance.new("Frame")
+box.Parent = screenGui
+box.Name = "DrawingBox"
+box.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+box.BackgroundTransparency = 0.75
+box.BorderSizePixel = 0
+box.Size = UDim2.new(0.33, 0, 0.5, 0) -- 1/3 wide, 1/2 tall
+box.Position = UDim2.new(0.5 - 0.33/2, 0, 0.5 - 0.5/2, 0) -- centered
+box.ClipsDescendants = true
+
+-- State
+local drawing = false
+local eraseMode = false
+local boxVisible = true
+local brushSizes = {small = 4, medium = 8, large = 16}
+local currentSize = "small"
+local dotCounter = 0
+
+-- Function: create a dot
+local function createDot(x, y)
+	local size = brushSizes[currentSize]
+	local dot = Instance.new("Frame")
+	dot.Size = UDim2.new(0, size, 0, size)
+	dot.Position = UDim2.new(0, x - box.AbsolutePosition.X, 0, y - box.AbsolutePosition.Y)
+	dot.BackgroundColor3 = Color3.new(0,0,0)
+	dot.BorderSizePixel = 0
+	dot.Name = "InkDot"
+	dot.LayoutOrder = dotCounter
+	dotCounter += 1
+	dot.Parent = box
+end
+
+-- Function: erase dots near cursor
+local function eraseAt(x, y)
+	for _, obj in ipairs(box:GetChildren()) do
+		if obj.Name == "InkDot" then
+			local pos = obj.AbsolutePosition
+			local sz = obj.AbsoluteSize
+			if x >= pos.X and x <= pos.X + sz.X and
+			   y >= pos.Y and y <= pos.Y + sz.Y then
+				obj:Destroy()
+			end
+		end
+	end
+end
+
+-- Controls container
+local controls = Instance.new("Frame")
+controls.Size = UDim2.new(0, 400, 0, 30)
+controls.Position = UDim2.new(0, 10, 0, 10)
+controls.BackgroundTransparency = 1
+controls.Parent = box
+
+-- Draw/Eraser toggle
+local drawBtn = Instance.new("TextButton")
+drawBtn.Size = UDim2.new(0, 90, 1, 0)
+drawBtn.BackgroundColor3 = Color3.fromRGB(200,200,200)
+drawBtn.Text = "Mode: Draw"
+drawBtn.Parent = controls
+drawBtn.MouseButton1Click:Connect(function()
+	eraseMode = not eraseMode
+	drawBtn.Text = eraseMode and "Mode: Erase" or "Mode: Draw"
+end)
+
+-- Brush size toggle
+local sizeBtn = Instance.new("TextButton")
+sizeBtn.Size = UDim2.new(0, 90, 1, 0)
+sizeBtn.Position = UDim2.new(0, 100, 0, 0)
+sizeBtn.BackgroundColor3 = Color3.fromRGB(200,200,200)
+sizeBtn.Text = "Size: Small"
+sizeBtn.Parent = controls
+sizeBtn.MouseButton1Click:Connect(function()
+	if currentSize == "small" then
+		currentSize = "medium"
+	elseif currentSize == "medium" then
+		currentSize = "large"
+	else
+		currentSize = "small"
+	end
+	sizeBtn.Text = "Size: " .. currentSize:sub(1,1):upper() .. currentSize:sub(2)
+end)
+
+-- Smooth tool button
+local smoothBtn = Instance.new("TextButton")
+smoothBtn.Size = UDim2.new(0, 120, 1, 0)
+smoothBtn.Position = UDim2.new(0, 200, 0, 0)
+smoothBtn.BackgroundColor3 = Color3.fromRGB(200,200,200)
+smoothBtn.Text = "Smooth"
+smoothBtn.Parent = controls
+
+-- Smooth function
+local function smoothDrawing(intensity)
+	local dots = {}
+	for _, obj in ipairs(box:GetChildren()) do
+		if obj.Name == "InkDot" then
+			table.insert(dots, obj)
+		end
+	end
+	if #dots < 3 then return end
+	table.sort(dots, function(a,b) return a.LayoutOrder < b.LayoutOrder end)
+
+	local positions = {}
+	for _, dot in ipairs(dots) do
+		local pos = dot.AbsolutePosition
+		table.insert(positions, Vector2.new(pos.X, pos.Y))
+	end
+
+	local newPositions = {}
+	for i = 1, #positions do
+		local sumX, sumY, count = 0,0,0
+		for j = -intensity, intensity do
+			local idx = i+j
+			if positions[idx] then
+				sumX += positions[idx].X
+				sumY += positions[idx].Y
+				count += 1
+			end
+		end
+		table.insert(newPositions, Vector2.new(sumX/count, sumY/count))
+	end
+
+	for _, dot in ipairs(dots) do
+		dot:Destroy()
+	end
+	for _, pos in ipairs(newPositions) do
+		createDot(pos.X, pos.Y)
+	end
+end
+
+-- Smooth button click = smooth drawing
+smoothBtn.MouseButton1Click:Connect(function()
+	smoothDrawing(3) -- default intensity = 3
+end)
+
+-- Input handling
+local mouse = player:GetMouse()
+box.InputBegan:Connect(function(input)
+	if not boxVisible then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		drawing = true
+		if eraseMode then
+			eraseAt(mouse.X, mouse.Y)
+		else
+			createDot(mouse.X, mouse.Y)
+		end
+	end
+end)
+box.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		drawing = false
+	end
+end)
+
+runService.RenderStepped:Connect(function()
+	if drawing and boxVisible then
+		if eraseMode then
+			eraseAt(mouse.X, mouse.Y)
+		else
+			createDot(mouse.X, mouse.Y)
+		end
+	end
+end)
