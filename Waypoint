@@ -1,0 +1,60 @@
+-- LocalScript inside StarterPlayer > StarterPlayerScripts
+
+-- Services
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Teleport point storage
+local teleportPoint = nil
+
+-- Update character if respawned
+player.CharacterAdded:Connect(function(char)
+	character = char
+	humanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end)
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TeleportGui"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Create a helper function for buttons
+local function createButton(name, text, position)
+	local button = Instance.new("TextButton")
+	button.Name = name
+	button.Text = text
+	button.Size = UDim2.new(0, 150, 0, 50)
+	button.Position = position
+	button.BackgroundColor3 = Color3.fromRGB(50, 150, 250)
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.Font = Enum.Font.SourceSansBold
+	button.TextSize = 22
+	button.Parent = screenGui
+	return button
+end
+
+-- Create "Set Point" button
+local setButton = createButton("SetPoint", "Set Point", UDim2.new(0, 20, 0, 200))
+
+-- Create "Teleport" button
+local tpButton = createButton("Teleport", "Teleport", UDim2.new(0, 200, 0, 200))
+
+-- Button functionality
+setButton.MouseButton1Click:Connect(function()
+	teleportPoint = humanoidRootPart.CFrame
+	setButton.Text = "Point Saved!"
+	wait(1)
+	setButton.Text = "Set Point"
+end)
+
+tpButton.MouseButton1Click:Connect(function()
+	if teleportPoint then
+		humanoidRootPart.CFrame = teleportPoint
+	else
+		tpButton.Text = "No Point!"
+		wait(1)
+		tpButton.Text = "Teleport"
+	end
+end)
