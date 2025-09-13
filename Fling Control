@@ -2,24 +2,38 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
-local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local cam = Workspace.CurrentCamera
 
--- UI Toggle Button
+-- UI Setup
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FlingBounceGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Toggle Button (top right)
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 120, 0, 40)
-toggleButton.Position = UDim2.new(0.5, -60, 0.9, 0)
-toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleButton.Position = UDim2.new(1, -130, 0, 10) -- top right
+toggleButton.AnchorPoint = Vector2.new(0, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(30, 120, 30)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Text = "Bounce: ON"
 toggleButton.Parent = screenGui
+
+-- Fling indicator (circle top left)
+local flingIndicator = Instance.new("Frame")
+flingIndicator.Size = UDim2.new(0, 30, 0, 30)
+flingIndicator.Position = UDim2.new(0, 10, 0, 10) -- top left
+flingIndicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+flingIndicator.BorderSizePixel = 0
+flingIndicator.Parent = screenGui
+
+-- Make it circular
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1, 0)
+corner.Parent = flingIndicator
 
 local systemEnabled = true
 toggleButton.MouseButton1Click:Connect(function()
@@ -39,9 +53,9 @@ end
 local humanoid, root, char = getCharacter()
 
 -- Settings
-local flingVelocityThreshold = 150
+local flingVelocityThreshold = 25
 local sittingSpeedThreshold = 18
-local bounceMultiplier = 1.2 -- velocity increase each bounce
+local bounceMultiplier = 1.2
 local ragdollStates = {
 	Enum.HumanoidStateType.Physics,
 	Enum.HumanoidStateType.FallingDown,
@@ -70,21 +84,26 @@ end)
 
 -- Determine if fling logic should be active
 local function shouldFling()
-	if not systemEnabled then return false end
-	if not root then return false end
+	if not systemEnabled or not root then return false end
 	local vel = root.Velocity
 	local horizontalSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
-	return ragdolled or vel.Magnitude > flingVelocityThreshold or (sitting and horizontalSpeed > sittingSpeedThreshold)
+
+	if ragdolled then return true end
+	if horizontalSpeed > flingVelocityThreshold then return true end
+	if sitting and horizontalSpeed > sittingSpeedThreshold then return true end
+
+	return false
 end
 
 -- Redirect fling momentum instantly
 RunService.Heartbeat:Connect(function()
 	if root and shouldFling() then
 		flinging = true
+		flingIndicator.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+
 		local vel = root.Velocity
 		local horizontalSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 
-		-- Redirect horizontal velocity to camera direction
 		local look = cam.CFrame.LookVector
 		local flatLook = Vector3.new(look.X, 0, look.Z)
 
@@ -95,6 +114,7 @@ RunService.Heartbeat:Connect(function()
 		end
 	else
 		flinging = false
+		flingIndicator.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 	end
 end)
 
@@ -116,11 +136,9 @@ local function setupBounce(char, rootPart)
 						local result = Workspace:Raycast(rayOrigin, rayDir, raycastParams)
 						if result then
 							local normal = result.Normal
-							-- Reflect velocity with boost
 							local reflection = vel - 2 * vel:Dot(normal) * normal
 							rootPart.Velocity = reflection * bounceMultiplier
 						else
-							-- fallback: straight up with boost
 							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * bounceMultiplier, vel.Z)
 						end
 					end
