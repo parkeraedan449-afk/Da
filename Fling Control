@@ -18,8 +18,8 @@ local humanoid, root, char = getCharacter()
 -- Settings
 local flingVelocityThreshold = 150
 local sittingSpeedThreshold = 18
-local bounceMultiplier = 1.1 -- controls bounce strength
-local bounceDamping = 0.85   -- reduce Y velocity each bounce (0.85 = lose 15%)
+local bounceMultiplier = 1.15 -- upward "spring" strength (slightly stronger than 1.0)
+local bounceDamping = 0.9    -- reduce Y velocity each bounce (closer to 1 = slower decay)
 local ragdollStates = {
 	Enum.HumanoidStateType.Physics,
 	Enum.HumanoidStateType.FallingDown,
@@ -99,14 +99,20 @@ local function setupBounce(char, rootPart)
 							local normal = result.Normal
 							-- Reflect velocity across normal
 							local reflection = vel - 2 * vel:Dot(normal) * normal
-							-- Apply bounce + damping
-							local newVel = reflection * bounceMultiplier
-							newVel = Vector3.new(newVel.X, newVel.Y * bounceDamping, newVel.Z)
+							-- Apply bounce + damping ONLY on Y
+							local newVel = Vector3.new(
+								reflection.X,
+								math.abs(reflection.Y) * bounceMultiplier * bounceDamping,
+								reflection.Z
+							)
 							rootPart.Velocity = newVel
 						else
 							-- fallback straight up bounce
-							local newVel = Vector3.new(vel.X, math.abs(vel.Y) * bounceMultiplier, vel.Z)
-							rootPart.Velocity = Vector3.new(newVel.X, newVel.Y * bounceDamping, newVel.Z)
+							rootPart.Velocity = Vector3.new(
+								vel.X,
+								math.abs(vel.Y) * bounceMultiplier * bounceDamping,
+								vel.Z
+							)
 						end
 					end
 				end
