@@ -18,7 +18,8 @@ local humanoid, root, char = getCharacter()
 -- Settings
 local flingVelocityThreshold = 150
 local sittingSpeedThreshold = 18
-local bounceMultiplier = 1.2
+local bounceMultiplier = 1.1 -- controls bounce strength
+local bounceDamping = 0.85   -- reduce Y velocity each bounce (0.85 = lose 15%)
 local ragdollStates = {
 	Enum.HumanoidStateType.Physics,
 	Enum.HumanoidStateType.FallingDown,
@@ -79,7 +80,11 @@ local function setupBounce(char, rootPart)
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") and part ~= rootPart then
 			part.Touched:Connect(function(hit)
-				if flinging and (hit:IsDescendantOf(Workspace.Terrain) or hit:IsA("BasePart")) then
+				if flinging 
+					and hit:IsA("BasePart") 
+					and hit.CanCollide -- only bounce on collidable objects
+					and not hit:IsDescendantOf(char) then
+
 					local vel = rootPart.Velocity
 					if vel.Y < -5 then
 						-- Raycast for surface normal
@@ -92,12 +97,16 @@ local function setupBounce(char, rootPart)
 						local result = Workspace:Raycast(rayOrigin, rayDir, raycastParams)
 						if result then
 							local normal = result.Normal
-							-- Reflect velocity across normal for trampoline effect
+							-- Reflect velocity across normal
 							local reflection = vel - 2 * vel:Dot(normal) * normal
-							rootPart.Velocity = reflection * bounceMultiplier
+							-- Apply bounce + damping
+							local newVel = reflection * bounceMultiplier
+							newVel = Vector3.new(newVel.X, newVel.Y * bounceDamping, newVel.Z)
+							rootPart.Velocity = newVel
 						else
-							-- fallback: straight up bounce
-							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * bounceMultiplier, vel.Z)
+							-- fallback straight up bounce
+							local newVel = Vector3.new(vel.X, math.abs(vel.Y) * bounceMultiplier, vel.Z)
+							rootPart.Velocity = Vector3.new(newVel.X, newVel.Y * bounceDamping, newVel.Z)
 						end
 					end
 				end
