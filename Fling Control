@@ -17,7 +17,8 @@ local humanoid, root, char = getCharacter()
 
 -- Settings
 local flingVelocityThreshold = 150
-local bounceMultiplier = 1.2 -- how "bouncy" the trampoline effect is
+local sittingSpeedThreshold = 18
+local bounceMultiplier = 1.2
 local ragdollStates = {
 	Enum.HumanoidStateType.Physics,
 	Enum.HumanoidStateType.FallingDown,
@@ -26,16 +27,89 @@ local ragdollStates = {
 
 local ragdolled = false
 local flinging = false
+local sitting = false
 
-local function isRagdollState(state)
+-- Detect ragdoll states
+humanoid.StateChanged:Connect(function(_, new)
+	ragdolled = false
 	for _, s in ipairs(ragdollStates) do
-		if state == s then
-			return true
+		if new == s then
+			ragdolled = true
+			break
 		end
 	end
-	return false
+end)
+
+-- Detect sitting
+humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
+	sitting = humanoid.Sit
+end)
+
+-- Decide if fling logic should be active
+local function shouldFling()
+	if not root then return false end
+	local vel = root.Velocity
+	local horizontalSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
+	return ragdolled or vel.Magnitude > flingVelocityThreshold or (sitting and horizontalSpeed > sittingSpeedThreshold)
 end
 
--- Detect ragdoll
-humanoid.StateChanged:Connect(function(_, new)
-	ragdo
+-- Redirect fling momentum instantly
+RunService.Heartbeat:Connect(function()
+	if root and shouldFling() then
+		flinging = true
+		local vel = root.Velocity
+		local horizontalSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
+
+		-- Redirect velocity to camera look
+		local look = cam.CFrame.LookVector
+		local flatLook = Vector3.new(look.X, 0, look.Z)
+
+		if flatLook.Magnitude > 0 then
+			flatLook = flatLook.Unit
+			local newVel = flatLook * horizontalSpeed
+			root.Velocity = Vector3.new(newVel.X, vel.Y, newVel.Z)
+		end
+	else
+		flinging = false
+	end
+end)
+
+-- Bounce like trampoline (ragdoll, fling, or sit-fast)
+local function setupBounce(char, rootPart)
+	for _, part in ipairs(char:GetDescendants()) do
+		if part:IsA("BasePart") and part ~= rootPart then
+			part.Touched:Connect(function(hit)
+				if flinging and (hit:IsDescendantOf(Workspace.Terrain) or hit:IsA("BasePart")) then
+					local vel = rootPart.Velocity
+					if vel.Y < -5 then
+						-- Raycast for surface normal
+						local rayOrigin = rootPart.Position
+						local rayDir = Vector3.new(0, -5, 0)
+						local raycastParams = RaycastParams.new()
+						raycastParams.FilterDescendantsInstances = {char}
+						raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+
+						local result = Workspace:Raycast(rayOrigin, rayDir, raycastParams)
+						if result then
+							local normal = result.Normal
+							-- Reflect velocity across normal for trampoline effect
+							local reflection = vel - 2 * vel:Dot(normal) * normal
+							rootPart.Velocity = reflection * bounceMultiplier
+						else
+							-- fallback: straight up bounce
+							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * bounceMultiplier, vel.Z)
+						end
+					end
+				end
+			end)
+		end
+	end
+end
+
+setupBounce(char, root)
+
+-- Reapply when respawning
+player.CharacterAdded:Connect(function(newChar)
+	humanoid, root, char = getCharacter()
+	setupBounce(char, root)
+end)
