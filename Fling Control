@@ -18,8 +18,7 @@ local humanoid, root, char = getCharacter()
 -- Settings
 local flingVelocityThreshold = 150
 local sittingSpeedThreshold = 18
-local bounceMultiplier = 1.15 -- upward "spring" strength (slightly stronger than 1.0)
-local bounceDamping = 0.9    -- reduce Y velocity each bounce (closer to 1 = slower decay)
+local bounceMultiplier = 1.2
 local ragdollStates = {
 	Enum.HumanoidStateType.Physics,
 	Enum.HumanoidStateType.FallingDown,
@@ -46,7 +45,7 @@ humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
 	sitting = humanoid.Sit
 end)
 
--- Decide if fling logic should be active
+-- Determine if fling logic should be active
 local function shouldFling()
 	if not root then return false end
 	local vel = root.Velocity
@@ -61,7 +60,7 @@ RunService.Heartbeat:Connect(function()
 		local vel = root.Velocity
 		local horizontalSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
 
-		-- Redirect velocity to camera look
+		-- Redirect horizontal velocity to camera direction
 		local look = cam.CFrame.LookVector
 		local flatLook = Vector3.new(look.X, 0, look.Z)
 
@@ -75,19 +74,16 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Bounce like trampoline (ragdoll, fling, or sit-fast)
+-- Bounce like original trampoline (only on collidable parts)
 local function setupBounce(char, rootPart)
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") and part ~= rootPart then
 			part.Touched:Connect(function(hit)
-				if flinging 
-					and hit:IsA("BasePart") 
-					and hit.CanCollide -- only bounce on collidable objects
-					and not hit:IsDescendantOf(char) then
-
+				-- Only bounce on collidable parts
+				if flinging and hit.CanCollide and not hit:IsDescendantOf(char) then
 					local vel = rootPart.Velocity
 					if vel.Y < -5 then
-						-- Raycast for surface normal
+						-- Raycast to get surface normal
 						local rayOrigin = rootPart.Position
 						local rayDir = Vector3.new(0, -5, 0)
 						local raycastParams = RaycastParams.new()
@@ -97,22 +93,11 @@ local function setupBounce(char, rootPart)
 						local result = Workspace:Raycast(rayOrigin, rayDir, raycastParams)
 						if result then
 							local normal = result.Normal
-							-- Reflect velocity across normal
 							local reflection = vel - 2 * vel:Dot(normal) * normal
-							-- Apply bounce + damping ONLY on Y
-							local newVel = Vector3.new(
-								reflection.X,
-								math.abs(reflection.Y) * bounceMultiplier * bounceDamping,
-								reflection.Z
-							)
-							rootPart.Velocity = newVel
+							rootPart.Velocity = reflection * bounceMultiplier
 						else
-							-- fallback straight up bounce
-							rootPart.Velocity = Vector3.new(
-								vel.X,
-								math.abs(vel.Y) * bounceMultiplier * bounceDamping,
-								vel.Z
-							)
+							-- fallback: straight up
+							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * bounceMultiplier, vel.Z)
 						end
 					end
 				end
