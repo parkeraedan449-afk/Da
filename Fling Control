@@ -16,7 +16,6 @@ screenGui.Parent = player:WaitForChild("PlayerGui")
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 120, 0, 40)
 toggleButton.Position = UDim2.new(1, -130, 0, 10) -- top right
-toggleButton.AnchorPoint = Vector2.new(0, 0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(30, 120, 30)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Text = "Bounce: ON"
@@ -55,7 +54,8 @@ local humanoid, root, char = getCharacter()
 -- Settings
 local flingVelocityThreshold = 25
 local sittingSpeedThreshold = 18
-local bounceMultiplier = 1.2
+local flingBounceMultiplier = 1.2
+local normalBounceMultiplier = 0.25
 local ragdollStates = {
 	Enum.HumanoidStateType.Physics,
 	Enum.HumanoidStateType.FallingDown,
@@ -118,15 +118,14 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Bounce with velocity increase
+-- Bounce logic (different for fling vs normal)
 local function setupBounce(char, rootPart)
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") and part ~= rootPart then
 			part.Touched:Connect(function(hit)
-				if systemEnabled and flinging and hit.CanCollide and not hit:IsDescendantOf(char) then
+				if systemEnabled and hit.CanCollide and not hit:IsDescendantOf(char) then
 					local vel = rootPart.Velocity
 					if vel.Y < -5 then
-						-- Raycast to get surface normal
 						local rayOrigin = rootPart.Position
 						local rayDir = Vector3.new(0, -5, 0)
 						local raycastParams = RaycastParams.new()
@@ -137,9 +136,17 @@ local function setupBounce(char, rootPart)
 						if result then
 							local normal = result.Normal
 							local reflection = vel - 2 * vel:Dot(normal) * normal
-							rootPart.Velocity = reflection * bounceMultiplier
+							if flinging then
+								rootPart.Velocity = reflection * flingBounceMultiplier
+							else
+								rootPart.Velocity = reflection * normalBounceMultiplier
+							end
 						else
-							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * bounceMultiplier, vel.Z)
+							if flinging then
+								rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * flingBounceMultiplier, vel.Z)
+							else
+								rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * normalBounceMultiplier, vel.Z)
+							end
 						end
 					end
 				end
