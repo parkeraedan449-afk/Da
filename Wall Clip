@@ -15,34 +15,23 @@ local clipButton = Instance.new("TextButton")
 clipButton.Size = UDim2.new(0, 150, 0, 50)
 clipButton.Position = UDim2.new(0.5, -75, 0.8, 0)
 clipButton.Text = "Wall Clip"
-clipButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+clipButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- red button
 clipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 clipButton.Parent = screenGui
 
--- Function to clip through multiple walls
+-- Function to clip through wall (wall thickness + 1 stud)
 local function wallClip()
-    local maxDistance = 50 -- maximum distance to check for stacked walls
-    local stepDistance = 10 -- distance per raycast
-    local remainingDistance = maxDistance
+    local rayOrigin = hrp.Position
+    local rayDirection = hrp.CFrame.LookVector * 20 -- max distance to check for wall
 
-    while remainingDistance > 0 do
-        local rayOrigin = hrp.Position
-        local rayDirection = hrp.CFrame.LookVector * stepDistance
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {character}
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 
-        local raycastParams = RaycastParams.new()
-        raycastParams.FilterDescendantsInstances = {character}
-        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-
-        local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-        if result then
-            -- Move past the wall
-            local wallThickness = (result.Position - rayOrigin).Magnitude
-            hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * (wallThickness + 2)
-            remainingDistance = remainingDistance - (wallThickness + 2)
-        else
-            -- No wall detected, break the loop
-            break
-        end
+    local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+    if result then
+        local wallThickness = (result.Position - rayOrigin).Magnitude
+        hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * (wallThickness + 1)
     end
 end
 
