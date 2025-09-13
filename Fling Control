@@ -2,10 +2,33 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local cam = Workspace.CurrentCamera
 
+-- UI Toggle Button
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FlingBounceGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 120, 0, 40)
+toggleButton.Position = UDim2.new(0.5, -60, 0.9, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "Bounce: ON"
+toggleButton.Parent = screenGui
+
+local systemEnabled = true
+toggleButton.MouseButton1Click:Connect(function()
+	systemEnabled = not systemEnabled
+	toggleButton.Text = systemEnabled and "Bounce: ON" or "Bounce: OFF"
+	toggleButton.BackgroundColor3 = systemEnabled and Color3.fromRGB(30, 120, 30) or Color3.fromRGB(120, 30, 30)
+end)
+
+-- Character getter
 local function getCharacter()
 	local char = player.Character or player.CharacterAdded:Wait()
 	local humanoid = char:WaitForChild("Humanoid")
@@ -18,6 +41,7 @@ local humanoid, root, char = getCharacter()
 -- Settings
 local flingVelocityThreshold = 150
 local sittingSpeedThreshold = 18
+local bounceMultiplier = 1.2 -- velocity increase each bounce
 local ragdollStates = {
 	Enum.HumanoidStateType.Physics,
 	Enum.HumanoidStateType.FallingDown,
@@ -46,6 +70,7 @@ end)
 
 -- Determine if fling logic should be active
 local function shouldFling()
+	if not systemEnabled then return false end
 	if not root then return false end
 	local vel = root.Velocity
 	local horizontalSpeed = Vector3.new(vel.X, 0, vel.Z).Magnitude
@@ -73,12 +98,12 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Perfect elasticity bounce (all momentum reflected)
+-- Bounce with velocity increase
 local function setupBounce(char, rootPart)
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") and part ~= rootPart then
 			part.Touched:Connect(function(hit)
-				if flinging and hit.CanCollide and not hit:IsDescendantOf(char) then
+				if systemEnabled and flinging and hit.CanCollide and not hit:IsDescendantOf(char) then
 					local vel = rootPart.Velocity
 					if vel.Y < -5 then
 						-- Raycast to get surface normal
@@ -91,12 +116,12 @@ local function setupBounce(char, rootPart)
 						local result = Workspace:Raycast(rayOrigin, rayDir, raycastParams)
 						if result then
 							local normal = result.Normal
-							-- Reflect velocity perfectly (no damping, no multiplier)
+							-- Reflect velocity with boost
 							local reflection = vel - 2 * vel:Dot(normal) * normal
-							rootPart.Velocity = reflection
+							rootPart.Velocity = reflection * bounceMultiplier
 						else
-							-- fallback: straight up with same speed
-							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y), vel.Z)
+							-- fallback: straight up with boost
+							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * bounceMultiplier, vel.Z)
 						end
 					end
 				end
