@@ -1,0 +1,41 @@
+-- LocalScript in StarterPlayer > StarterPlayerScripts
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local cam = Workspace.CurrentCamera
+
+local function getCharacter()
+	local char = player.Character or player.CharacterAdded:Wait()
+	local humanoid = char:WaitForChild("Humanoid")
+	local root = char:WaitForChild("HumanoidRootPart")
+	return humanoid, root, char
+end
+
+local humanoid, root, char = getCharacter()
+
+-- Settings
+local flingVelocityThreshold = 150
+local bounceMultiplier = 1.2 -- how "bouncy" the trampoline effect is
+local ragdollStates = {
+	Enum.HumanoidStateType.Physics,
+	Enum.HumanoidStateType.FallingDown,
+	Enum.HumanoidStateType.Ragdoll,
+}
+
+local ragdolled = false
+local flinging = false
+
+local function isRagdollState(state)
+	for _, s in ipairs(ragdollStates) do
+		if state == s then
+			return true
+		end
+	end
+	return false
+end
+
+-- Detect ragdoll
+humanoid.StateChanged:Connect(function(_, new)
+	ragdo
