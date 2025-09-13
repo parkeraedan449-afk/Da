@@ -18,7 +18,6 @@ local humanoid, root, char = getCharacter()
 -- Settings
 local flingVelocityThreshold = 150
 local sittingSpeedThreshold = 18
-local bounceDamping = 0.8 -- < 1 = lose momentum (0.8 = keep 80% each bounce)
 local ragdollStates = {
 	Enum.HumanoidStateType.Physics,
 	Enum.HumanoidStateType.FallingDown,
@@ -74,7 +73,7 @@ RunService.Heartbeat:Connect(function()
 	end
 end)
 
--- Bounce with damping (no infinite speed gain)
+-- Perfect elasticity bounce (all momentum reflected)
 local function setupBounce(char, rootPart)
 	for _, part in ipairs(char:GetDescendants()) do
 		if part:IsA("BasePart") and part ~= rootPart then
@@ -92,14 +91,24 @@ local function setupBounce(char, rootPart)
 						local result = Workspace:Raycast(rayOrigin, rayDir, raycastParams)
 						if result then
 							local normal = result.Normal
+							-- Reflect velocity perfectly (no damping, no multiplier)
 							local reflection = vel - 2 * vel:Dot(normal) * normal
-							-- Apply damping so you lose momentum each bounce
-							rootPart.Velocity = reflection * bounceDamping
+							rootPart.Velocity = reflection
 						else
-							-- fallback: straight up with damping
-							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y) * bounceDamping, vel.Z)
+							-- fallback: straight up with same speed
+							rootPart.Velocity = Vector3.new(vel.X, math.abs(vel.Y), vel.Z)
 						end
 					end
 				end
 			end)
 		end
+	end
+end
+
+setupBounce(char, root)
+
+-- Reapply when respawning
+player.CharacterAdded:Connect(function(newChar)
+	humanoid, root, char = getCharacter()
+	setupBounce(char, root)
+end)
