@@ -1,7 +1,6 @@
 -- LocalScript (StarterPlayerScripts)
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 local character = player.Character or player.CharacterAdded:Wait()
@@ -15,42 +14,37 @@ screenGui.Parent = player:WaitForChild("PlayerGui")
 local clipButton = Instance.new("TextButton")
 clipButton.Size = UDim2.new(0, 150, 0, 50)
 clipButton.Position = UDim2.new(0.5, -75, 0.8, 0)
-clipButton.Text = "Hold to Clip"
+clipButton.Text = "Wall Clip"
 clipButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 clipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 clipButton.Parent = screenGui
 
--- State variable
-local isClipping = false
-
--- Wall clip function
+-- Function to clip through multiple walls
 local function wallClip()
-    local rayOrigin = hrp.Position
-    local rayDirection = hrp.CFrame.LookVector * 10 -- max distance to check for wall
+    local maxDistance = 50 -- maximum distance to check for stacked walls
+    local stepDistance = 10 -- distance per raycast
+    local remainingDistance = maxDistance
 
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {character}
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    while remainingDistance > 0 do
+        local rayOrigin = hrp.Position
+        local rayDirection = hrp.CFrame.LookVector * stepDistance
 
-    local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-    if result then
-        local wallThickness = (result.Position - rayOrigin).Magnitude
-        hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * (wallThickness + 2) -- teleport past wall
+        local raycastParams = RaycastParams.new()
+        raycastParams.FilterDescendantsInstances = {character}
+        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+        local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+        if result then
+            -- Move past the wall
+            local wallThickness = (result.Position - rayOrigin).Magnitude
+            hrp.CFrame = hrp.CFrame + hrp.CFrame.LookVector * (wallThickness + 2)
+            remainingDistance = remainingDistance - (wallThickness + 2)
+        else
+            -- No wall detected, break the loop
+            break
+        end
     end
 end
 
--- RunService loop for continuous clipping
-RunService.RenderStepped:Connect(function()
-    if isClipping then
-        wallClip()
-    end
-end)
-
--- Button events
-clipButton.MouseButton1Down:Connect(function()
-    isClipping = true
-end)
-
-clipButton.MouseButton1Up:Connect(function()
-    isClipping = false
-end)
+-- Button click
+clipButton.MouseButton1Click:Connect(wallClip)
