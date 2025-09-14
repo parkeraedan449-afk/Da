@@ -1,0 +1,41 @@
+-- LocalScript (place in StarterPlayerScripts or StarterGui)
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- UI Setup
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.Name = "FlingGui"
+
+local button = Instance.new("TextButton", screenGui)
+button.Size = UDim2.new(0, 150, 0, 50)
+button.Position = UDim2.new(0.5, -75, 0.9, 0) -- center bottom
+button.Text = "Toggle Fling"
+button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+button.TextColor3 = Color3.new(1, 1, 1)
+button.TextScaled = true
+
+-- Fling force object (not active at start)
+local flingAttachment = Instance.new("Attachment", hrp)
+local fling = Instance.new("AngularVelocity")
+fling.Attachment0 = flingAttachment
+fling.MaxTorque = math.huge
+fling.AngularVelocity = Vector3.new(0, 5000, 0) -- Spin around Y axis
+fling.Enabled = false
+fling.Parent = hrp
+
+-- Toggle logic
+local isFlinging = false
+button.MouseButton1Click:Connect(function()
+	isFlinging = not isFlinging
+	fling.Enabled = isFlinging
+
+	if isFlinging then
+		button.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+		button.Text = "Fling ON"
+	else
+		button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+		button.Text = "Fling OFF"
+	end
+end)
